@@ -17,6 +17,8 @@ use PHPUnit\Framework\TestCase;
  */
 class SystemReadinessServiceTest extends TestCase
 {
+    private const DATABASE_PROBE = 'SELECT 1 AS readiness_value';
+
     protected function tearDown(): void
     {
         Mockery::close();
@@ -31,7 +33,14 @@ class SystemReadinessServiceTest extends TestCase
         $database = Mockery::mock(DatabaseManager::class);
         $connection = Mockery::mock(Connection::class);
         $database->shouldReceive('connection')->once()->andReturn($connection);
-        $connection->shouldReceive('getPdo')->once()->andReturn(new \stdClass());
+        $connection->shouldReceive('selectOne')
+            ->once()
+            ->with(self::DATABASE_PROBE, [], false)
+            ->andReturn((object) ['readiness_value' => 1]);
+        $connection->shouldReceive('selectOne')
+            ->once()
+            ->with(self::DATABASE_PROBE, [], true)
+            ->andReturn((object) ['readiness_value' => 1]);
 
         $cache = Mockery::mock(CacheManager::class);
         $cacheRepository = Mockery::mock(CacheRepository::class);
@@ -57,12 +66,75 @@ class SystemReadinessServiceTest extends TestCase
     }
 
     /**
-     * Database connection exceptions fail closed and stop later checks.
+     * Database manager exceptions fail closed and stop later checks.
      */
-    public function test_returns_false_when_database_connection_throws(): void
+    public function test_returns_false_when_database_manager_throws(): void
     {
         $database = Mockery::mock(DatabaseManager::class);
         $database->shouldReceive('connection')->once()->andThrow(new \RuntimeException('secret host'));
+
+        $cache = Mockery::mock(CacheManager::class);
+        $cache->shouldNotReceive('store');
+        $filesystem = Mockery::mock(Filesystem::class);
+        $filesystem->shouldNotReceive('isDirectory');
+
+        $service = $this->makeService(
+            ['database', 'cache', 'storage'],
+            '/runtime',
+            $database,
+            $cache,
+            $filesystem,
+        );
+
+        self::assertFalse($service->isReady());
+    }
+
+    /**
+     * A write-database probe failure prevents read and downstream checks.
+     */
+    public function test_returns_false_when_database_write_probe_throws(): void
+    {
+        $database = Mockery::mock(DatabaseManager::class);
+        $connection = Mockery::mock(Connection::class);
+        $database->shouldReceive('connection')->once()->andReturn($connection);
+        $connection->shouldReceive('selectOne')
+            ->once()
+            ->with(self::DATABASE_PROBE, [], false)
+            ->andThrow(new \RuntimeException('secret write host'));
+        $connection->shouldNotReceive('selectOne')->with(self::DATABASE_PROBE, [], true);
+
+        $cache = Mockery::mock(CacheManager::class);
+        $cache->shouldNotReceive('store');
+        $filesystem = Mockery::mock(Filesystem::class);
+        $filesystem->shouldNotReceive('isDirectory');
+
+        $service = $this->makeService(
+            ['database', 'cache', 'storage'],
+            '/runtime',
+            $database,
+            $cache,
+            $filesystem,
+        );
+
+        self::assertFalse($service->isReady());
+    }
+
+    /**
+     * A read-database probe failure prevents downstream checks.
+     */
+    public function test_returns_false_when_database_read_probe_throws(): void
+    {
+        $database = Mockery::mock(DatabaseManager::class);
+        $connection = Mockery::mock(Connection::class);
+        $database->shouldReceive('connection')->once()->andReturn($connection);
+        $connection->shouldReceive('selectOne')
+            ->once()
+            ->with(self::DATABASE_PROBE, [], false)
+            ->andReturn((object) ['readiness_value' => 1]);
+        $connection->shouldReceive('selectOne')
+            ->once()
+            ->with(self::DATABASE_PROBE, [], true)
+            ->andThrow(new \RuntimeException('secret read host'));
 
         $cache = Mockery::mock(CacheManager::class);
         $cache->shouldNotReceive('store');
@@ -88,7 +160,14 @@ class SystemReadinessServiceTest extends TestCase
         $database = Mockery::mock(DatabaseManager::class);
         $connection = Mockery::mock(Connection::class);
         $database->shouldReceive('connection')->once()->andReturn($connection);
-        $connection->shouldReceive('getPdo')->once()->andReturn(new \stdClass());
+        $connection->shouldReceive('selectOne')
+            ->once()
+            ->with(self::DATABASE_PROBE, [], false)
+            ->andReturn((object) ['readiness_value' => 1]);
+        $connection->shouldReceive('selectOne')
+            ->once()
+            ->with(self::DATABASE_PROBE, [], true)
+            ->andReturn((object) ['readiness_value' => 1]);
 
         $cache = Mockery::mock(CacheManager::class);
         $cache->shouldReceive('store')->once()->andThrow(new \RuntimeException('secret redis host'));
@@ -212,7 +291,7 @@ class SystemReadinessServiceTest extends TestCase
     }
 
     /**
-     * Every configured entry must be a non-empty string.
+     * Every configured entry must be a non-empty string before dependency access.
      */
     public function test_returns_false_for_non_string_check_entry(): void
     {

@@ -71,11 +71,13 @@ class SystemReadinessService
     }
 
     /**
-     * Verify that the configured database connection can be acquired.
+     * Verify that both write and read database paths can execute a query.
      */
     private function checkDatabase(): bool
     {
-        $this->database->connection()->getPdo();
+        $connection = $this->database->connection();
+        $connection->selectOne('SELECT 1 AS readiness_value', [], false);
+        $connection->selectOne('SELECT 1 AS readiness_value', [], true);
 
         return true;
     }

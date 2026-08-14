@@ -27,9 +27,11 @@ The repository also has no repository-local workflow that continuously exercises
 
 The default required checks are:
 
-1. database connection acquisition;
+1. successful read and write database queries;
 2. cache read connectivity;
 3. writable Laravel runtime storage.
+
+GSeven supports split read/write database configuration. The database readiness check therefore executes a side-effect-free `SELECT 1` against the write path and then the read path; acquiring a cached PDO object alone is not evidence that either endpoint still accepts queries.
 
 The ordered check list is configured through `READINESS_CHECKS`. Unknown, empty, or malformed check configuration fails closed. `READINESS_STORAGE_PATH` may override the default `storage/framework` path for non-standard deployments.
 
@@ -74,11 +76,13 @@ This design supports secure-development evidence expected by NIST SSDF and keeps
 1. **Add dependency checks to `/up`.** Rejected because database or cache incidents would become liveness failures and could trigger restart storms.
 2. **Expose detailed per-dependency JSON.** Rejected because it provides unnecessary reconnaissance data and creates an unstable external contract.
 3. **Protect `/ready` with application authentication.** Rejected because it couples orchestration to user/session infrastructure and can make the probe fail for the wrong reason.
-4. **Create a second autonomous merge implementation in GSeven.** Rejected because organization policy already owns this concern and duplicate writers increase race and token risk.
+4. **Treat PDO acquisition as a database probe.** Rejected because a previously created PDO object may exist after the remote database becomes unreachable; an actual read and write query is required.
+5. **Create a second autonomous merge implementation in GSeven.** Rejected because organization policy already owns this concern and duplicate writers increase race and token risk.
 
 ## Acceptance criteria
 
 - Healthy required dependencies produce HTTP 200 and the exact public JSON contract.
+- Both database read and write paths must execute the side-effect-free probe query.
 - Any required dependency failure or thrown exception produces HTTP 503 and the same non-diagnostic contract.
 - Malformed readiness configuration fails closed before any dependency is contacted.
 - The endpoint is uncached and unauthenticated.
