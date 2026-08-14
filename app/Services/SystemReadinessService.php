@@ -39,7 +39,13 @@ class SystemReadinessService
         }
 
         foreach ($checks as $check) {
-            if (! is_string($check) || $check === '' || ! $this->runCheck($check)) {
+            if (! is_string($check) || $check === '') {
+                return false;
+            }
+        }
+
+        foreach ($checks as $check) {
+            if (! $this->runCheck($check)) {
                 return false;
             }
         }

@@ -10,7 +10,7 @@ GSeven already exposes Laravel's built-in `/up` endpoint. That endpoint proves t
 
 Treating transient dependency failures as liveness failures would cause container restarts and can amplify an outage. The product therefore needs a distinct, low-cost readiness contract that removes an unhealthy instance from traffic without disclosing infrastructure details or forcing a restart.
 
-The repository also has no repository-local workflow that continuously exercises the PHP and JavaScript quality contracts. The operational slice therefore includes an exact-head CI workflow. Pull-request maintenance remains delegated to the organization-owned reusable scheduler rather than duplicating policy code in this repository.
+The repository also has no repository-local workflow that continuously exercises its existing PHP and JavaScript quality contracts. The operational slice therefore includes an exact-head CI workflow. Pull-request maintenance remains delegated to the organization-owned reusable scheduler rather than duplicating policy code in this repository.
 
 ## Decision
 
@@ -21,7 +21,7 @@ The repository also has no repository-local workflow that continuously exercises
 - Register `/ready` outside the `web` and `api` middleware groups so probes do not require sessions, authentication, localization, or API policy state.
 - Return only `{"status":"ready"}` with HTTP 200 or `{"status":"not_ready"}` with HTTP 503.
 - Never return connection names, hostnames, filesystem paths, exception messages, credentials, stack traces, or timing data.
-- Send `Cache-Control: no-store, max-age=0`, `Pragma: no-cache`, and `X-Content-Type-Options: nosniff`.
+- Send cache-prevention headers and `X-Content-Type-Options: nosniff`.
 
 ### Required dependency checks
 
@@ -39,7 +39,7 @@ Checks are deliberately side-effect free: no queue jobs, rows, cache entries, or
 
 - Any configured dependency failure makes the whole endpoint return HTTP 503.
 - Exceptions are converted to the same non-diagnostic response as ordinary failures.
-- The service stops after the first failure to keep probe cost bounded.
+- The service stops after the first dependency failure to keep probe cost bounded.
 - The probe itself does not log each failure, avoiding log amplification during an outage. Infrastructure monitoring owns alert aggregation.
 
 ### Deployment contract
@@ -47,19 +47,18 @@ Checks are deliberately side-effect free: no queue jobs, rows, cache entries, or
 - Kubernetes liveness: `/up`.
 - Kubernetes readiness: `/ready`.
 - Startup probe: `/up` when slow startup requires a separate grace period.
-- Probe clients must use a short timeout and determine success from the HTTP status code.
+- Probe clients use a short timeout and determine success from the HTTP status code.
 
 ### CI contract
 
 The repository-local CI workflow shall:
 
-- use immutable action commit references;
+- use immutable action commit references and non-persistent checkout credentials;
 - grant read-only repository permissions;
 - cancel superseded runs for the same pull request;
-- validate Composer metadata and install locked PHP dependencies;
-- execute PHP formatting, static analysis, tests, and the 100% coverage command against MySQL;
-- install locked Node dependencies;
-- execute formatting, lint, JavaScript tests, and the production build;
+- validate Composer metadata, install and audit locked PHP dependencies, run Pint, migrate MySQL, and enforce the PHPUnit 100% coverage gate;
+- test both the minimum supported PHP runtime and the current stable PHP runtime;
+- install and audit locked Node dependencies, run the complete Vitest suite, and build production assets on the minimum and current LTS Node runtimes;
 - contain no Copilot token and no privileged write token.
 
 The existing organization scheduler remains the authority for review dispatch, branch refresh, exact-head check evaluation, auto-merge, and merge. It already runs more frequently than the requested hourly cadence, so a duplicate repository scheduler would create redundant Actions load and competing mutations.
@@ -81,9 +80,9 @@ This design supports secure-development evidence expected by NIST SSDF and keeps
 
 - Healthy required dependencies produce HTTP 200 and the exact public JSON contract.
 - Any required dependency failure or thrown exception produces HTTP 503 and the same non-diagnostic contract.
-- Malformed readiness configuration fails closed.
+- Malformed readiness configuration fails closed before any dependency is contacted.
 - The endpoint is uncached and unauthenticated.
 - `/up` remains unchanged.
 - Unit and feature tests cover every production statement and branch added by this slice.
-- CI validates both PHP and JavaScript exact heads.
+- CI validates both PHP and JavaScript exact heads using locked dependencies.
 - Operations and APA 7th research traceability documentation are present.

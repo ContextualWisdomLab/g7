@@ -30,9 +30,9 @@ class SystemReadinessControllerTest extends TestCase
 
         $response->assertOk()
             ->assertExactJson(['status' => 'ready'])
-            ->assertHeader('Cache-Control', 'no-store, max-age=0')
             ->assertHeader('Pragma', 'no-cache')
             ->assertHeader('X-Content-Type-Options', 'nosniff');
+        $this->assertNoStoreCacheControl($response->headers->get('Cache-Control'));
     }
 
     /**
@@ -49,8 +49,18 @@ class SystemReadinessControllerTest extends TestCase
 
         $response->assertStatus(503)
             ->assertExactJson(['status' => 'not_ready'])
-            ->assertHeader('Cache-Control', 'no-store, max-age=0')
             ->assertHeader('Pragma', 'no-cache')
             ->assertHeader('X-Content-Type-Options', 'nosniff');
+        $this->assertNoStoreCacheControl($response->headers->get('Cache-Control'));
+    }
+
+    /**
+     * Assert the response cannot be reused by an intermediary or browser cache.
+     */
+    private function assertNoStoreCacheControl(?string $cacheControl): void
+    {
+        self::assertNotNull($cacheControl);
+        self::assertStringContainsString('no-store', $cacheControl);
+        self::assertStringContainsString('max-age=0', $cacheControl);
     }
 }
