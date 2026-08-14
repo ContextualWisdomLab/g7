@@ -53,13 +53,14 @@
 4. Register `GET /ready` through a dedicated service provider without web/API middleware.
 5. Preserve the existing `/up` liveness route unchanged.
 
-## Task 4: Document deployment and research traceability
+## Task 4: Document deployment, research traceability, and release notes
 
 **Files**
 - Create: `docs/operations/health-probes.md`
 - Create: `docs/doctoring/REFERENCES.md`
+- Create: `docs/changes/README.md`
+- Create: `docs/changes/2026-08-14-operational-readiness.md`
 - Modify: `.env.example`
-- Modify: `CHANGELOG.md`
 
 **Steps**
 1. Document liveness, readiness, and startup semantics.
@@ -67,7 +68,7 @@
 3. Explain that the public response intentionally omits diagnostics.
 4. Add `READINESS_CHECKS` and `READINESS_STORAGE_PATH` examples.
 5. Add APA 7th references for HTTP semantics/caching, Kubernetes probes, Laravel health routing, NIST SSDF, and SLSA 1.2.
-6. Add an Unreleased changelog section written as customer-action guidance.
+6. Record a customer-action-oriented change fragment. Fold it into the root `CHANGELOG.md` only when exact-head release checks pass and a release version is actually cut; do not rewrite released history during an unverified feature PR.
 
 ## Task 5: Establish exact-head CI
 
