@@ -17,6 +17,9 @@ use Throwable;
  */
 class SystemReadinessService
 {
+    /** @var list<string> */
+    private const SUPPORTED_CHECKS = ['database', 'cache', 'storage'];
+
     /**
      * Create the readiness evaluator.
      */
@@ -38,10 +41,19 @@ class SystemReadinessService
             return false;
         }
 
+        $validatedChecks = [];
+
         foreach ($checks as $check) {
-            if (! is_string($check) || $check === '') {
+            if (
+                ! is_string($check)
+                || $check === ''
+                || ! in_array($check, self::SUPPORTED_CHECKS, true)
+                || isset($validatedChecks[$check])
+            ) {
                 return false;
             }
+
+            $validatedChecks[$check] = true;
         }
 
         foreach ($checks as $check) {
@@ -63,7 +75,6 @@ class SystemReadinessService
                 'database' => $this->checkDatabase(),
                 'cache' => $this->checkCache(),
                 'storage' => $this->checkStorage(),
-                default => false,
             };
         } catch (Throwable) {
             return false;

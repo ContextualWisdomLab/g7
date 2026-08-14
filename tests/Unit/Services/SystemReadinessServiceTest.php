@@ -261,11 +261,27 @@ class SystemReadinessServiceTest extends TestCase
     }
 
     /**
-     * An unknown check name is a configuration error and fails closed.
+     * Unsupported checks are rejected before an earlier valid check can run.
      */
-    public function test_returns_false_for_unknown_check_name(): void
+    public function test_returns_false_for_unknown_check_name_before_dependency_access(): void
     {
-        $service = $this->makeServiceWithUnusedDependencies(['unknown_dependency'], '/runtime');
+        $service = $this->makeServiceWithUnusedDependencies(
+            ['database', 'unknown_dependency'],
+            '/runtime',
+        );
+
+        self::assertFalse($service->isReady());
+    }
+
+    /**
+     * Duplicate checks are rejected before they can amplify probe traffic.
+     */
+    public function test_returns_false_for_duplicate_check_name_before_dependency_access(): void
+    {
+        $service = $this->makeServiceWithUnusedDependencies(
+            ['database', 'database'],
+            '/runtime',
+        );
 
         self::assertFalse($service->isReady());
     }
@@ -291,9 +307,9 @@ class SystemReadinessServiceTest extends TestCase
     }
 
     /**
-     * Every configured entry must be a non-empty string before dependency access.
+     * Every configured entry must be a string before dependency access.
      */
-    public function test_returns_false_for_non_string_check_entry(): void
+    public function test_returns_false_for_non_string_check_entry_before_dependency_access(): void
     {
         $service = $this->makeServiceWithUnusedDependencies(['database', 7], '/runtime');
 
@@ -301,11 +317,11 @@ class SystemReadinessServiceTest extends TestCase
     }
 
     /**
-     * Empty check names are rejected rather than ignored.
+     * Empty check names are rejected before dependency access rather than ignored.
      */
-    public function test_returns_false_for_empty_check_name(): void
+    public function test_returns_false_for_empty_check_name_before_dependency_access(): void
     {
-        $service = $this->makeServiceWithUnusedDependencies([''], '/runtime');
+        $service = $this->makeServiceWithUnusedDependencies(['database', '', 'cache'], '/runtime');
 
         self::assertFalse($service->isReady());
     }
