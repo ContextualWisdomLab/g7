@@ -1,12 +1,9 @@
 <?php
 
-$checks = array_values(array_filter(
-    array_map(
-        static fn (string $check): string => trim($check),
-        explode(',', (string) env('READINESS_CHECKS', 'database,cache,storage')),
-    ),
-    static fn (string $check): bool => $check !== '',
-));
+$checks = array_map(
+    static fn (string $check): string => trim($check),
+    explode(',', (string) env('READINESS_CHECKS', 'database,cache,storage')),
+);
 
 return [
     'checks' => $checks,
