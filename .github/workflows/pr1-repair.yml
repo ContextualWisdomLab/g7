@@ -1,0 +1,113 @@
+name: PR 1 exact-head repair
+
+on:
+  push:
+    branches:
+      - codex/operational-readiness
+    paths:
+      - .github/workflows/pr1-repair.yml
+
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+concurrency:
+  group: pr1-exact-head-repair
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    name: Repair dependency and regression gates
+    if: github.ref == 'refs/heads/codex/operational-readiness'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out the repair branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: codex/operational-readiness
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Install PHP and Composer
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '8.4'
+          extensions: bcmath, curl, dom, exif, fileinfo, gd, intl, mbstring, pcntl, pdo_mysql, sodium, zip
+          coverage: none
+          tools: composer:v2
+
+      - name: Install Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Synchronize the data-surface non-target contract
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('resources/js/core/template-engine/layout-editor/__tests__/spec/dataBuiltinCapabilityShape.test.ts')
+          source = path.read_text(encoding='utf-8')
+          old = "    'ChipCheckbox', 'MultilingualTagInput',\n"
+          new = "    'ChipCheckbox', 'MultilingualTagInput', 'SectionHeader', 'ThemeToggle',\n"
+          if source.count(old) != 1:
+              raise SystemExit('Expected exactly one stale NON_TARGET allowlist entry')
+          path.write_text(source.replace(old, new), encoding='utf-8')
+
+      - name: Refresh the vulnerable Composer dependency closure
+        run: |
+          composer validate --strict --no-check-publish
+          composer update guzzlehttp/guzzle guzzlehttp/promises guzzlehttp/psr7 \
+            --with-all-dependencies \
+            --no-interaction \
+            --prefer-dist \
+            --no-progress
+          composer audit --locked --no-interaction
+
+      - name: Refresh every npm lockfile within declared constraints
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' lockfile; do
+            directory="$(dirname "$lockfile")"
+            if [[ ! -f "$directory/package.json" ]]; then
+              echo "Skipping orphan lockfile: $lockfile"
+              continue
+            fi
+            echo "Refreshing $lockfile"
+            (
+              cd "$directory"
+              npm audit fix --package-lock-only --ignore-scripts --no-fund --audit-level=high
+            )
+          done < <(find . -name package-lock.json -not -path '*/node_modules/*' -print0)
+
+      - name: Verify the JavaScript regression and production build
+        run: |
+          npm ci --ignore-scripts
+          npm run test:run
+          npm run build
+
+      - name: Commit the verified repairs and remove this workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/pr1-repair.yml
+          git add \
+            composer.lock \
+            package-lock.json \
+            docs/ai-tools/agents/package-lock.json \
+            templates/_bundled/sirsoft-admin_basic/package-lock.json \
+            templates/_bundled/sirsoft-basic/package-lock.json \
+            resources/js/core/template-engine/layout-editor/__tests__/spec/dataBuiltinCapabilityShape.test.ts
+          if git diff --cached --quiet; then
+            echo 'Repair produced no changes.' >&2
+            exit 1
+          fi
+          git config user.name 'CWL Exact-Head Repair'
+          git config user.email 'actions@users.noreply.github.com'
+          git commit -m 'fix(ci): refresh vulnerable locks and stale test contract'
+          git push origin HEAD:codex/operational-readiness
