@@ -10,6 +10,7 @@ use Illuminate\Database\Connection;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Filesystem\Filesystem;
 use Mockery;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -17,13 +18,9 @@ use PHPUnit\Framework\TestCase;
  */
 class SystemReadinessServiceTest extends TestCase
 {
-    private const DATABASE_PROBE = 'SELECT 1 AS readiness_value';
+    use MockeryPHPUnitIntegration;
 
-    protected function tearDown(): void
-    {
-        Mockery::close();
-        parent::tearDown();
-    }
+    private const DATABASE_PROBE = 'SELECT 1 AS readiness_value';
 
     /**
      * Every configured dependency must be reachable before the instance is ready.
@@ -44,7 +41,7 @@ class SystemReadinessServiceTest extends TestCase
 
         $cache = Mockery::mock(CacheManager::class);
         $cacheRepository = Mockery::mock(CacheRepository::class);
-        $cache->shouldReceive('store')->once()->andReturn($cacheRepository);
+        $cache->shouldReceive('store')->once()->with('database')->andReturn($cacheRepository);
         $cacheRepository->shouldReceive('get')
             ->once()
             ->with('__g7_readiness_probe__')
@@ -170,7 +167,10 @@ class SystemReadinessServiceTest extends TestCase
             ->andReturn((object) ['readiness_value' => 1]);
 
         $cache = Mockery::mock(CacheManager::class);
-        $cache->shouldReceive('store')->once()->andThrow(new \RuntimeException('secret redis host'));
+        $cache->shouldReceive('store')
+            ->once()
+            ->with('database')
+            ->andThrow(new \RuntimeException('secret cache host'));
 
         $filesystem = Mockery::mock(Filesystem::class);
         $filesystem->shouldNotReceive('isDirectory');
@@ -181,6 +181,56 @@ class SystemReadinessServiceTest extends TestCase
             $database,
             $cache,
             $filesystem,
+        );
+
+        self::assertFalse($service->isReady());
+    }
+
+    /**
+     * An empty explicit cache store cannot silently turn the cache probe into a no-op.
+     */
+    public function test_returns_false_for_empty_readiness_cache_store_before_cache_access(): void
+    {
+        $database = Mockery::mock(DatabaseManager::class);
+        $database->shouldNotReceive('connection');
+        $cache = Mockery::mock(CacheManager::class);
+        $cache->shouldNotReceive('store');
+        $filesystem = Mockery::mock(Filesystem::class);
+        $filesystem->shouldNotReceive('isDirectory');
+
+        $service = $this->makeService(
+            ['cache'],
+            '/runtime',
+            $database,
+            $cache,
+            $filesystem,
+            '',
+            'database',
+        );
+
+        self::assertFalse($service->isReady());
+    }
+
+    /**
+     * In-memory cache drivers do not prove that a production dependency is reachable.
+     */
+    public function test_returns_false_for_array_readiness_cache_store_before_cache_access(): void
+    {
+        $database = Mockery::mock(DatabaseManager::class);
+        $database->shouldNotReceive('connection');
+        $cache = Mockery::mock(CacheManager::class);
+        $cache->shouldNotReceive('store');
+        $filesystem = Mockery::mock(Filesystem::class);
+        $filesystem->shouldNotReceive('isDirectory');
+
+        $service = $this->makeService(
+            ['cache'],
+            '/runtime',
+            $database,
+            $cache,
+            $filesystem,
+            'array',
+            'array',
         );
 
         self::assertFalse($service->isReady());
@@ -384,11 +434,19 @@ class SystemReadinessServiceTest extends TestCase
         DatabaseManager $database,
         CacheManager $cache,
         Filesystem $filesystem,
+        string $cacheStore = 'database',
+        string $cacheDriver = 'database',
     ): SystemReadinessService {
         $config = new ConfigRepository([
             'readiness' => [
                 'checks' => $checks,
                 'storage_path' => $storagePath,
+                'cache_store' => $cacheStore,
+            ],
+            'cache' => [
+                'stores' => [
+                    $cacheStore => ['driver' => $cacheDriver],
+                ],
             ],
         ]);
 
