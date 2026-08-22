@@ -94,11 +94,20 @@ class SystemReadinessService
     }
 
     /**
-     * Verify that the configured cache store can answer a read request.
+     * Verify that an explicitly configured non-ephemeral cache store can answer
+     * a read request. Array, null, or missing stores do not prove dependency
+     * readiness and therefore fail closed before cache access.
      */
     private function checkCache(): bool
     {
-        $this->cache->store()->get('__g7_readiness_probe__');
+        $cacheStore = (string) $this->config->get('readiness.cache_store', '');
+        $cacheDriver = (string) $this->config->get("cache.stores.{$cacheStore}.driver", '');
+
+        if ($cacheStore === '' || in_array($cacheDriver, ['', 'array', 'null'], true)) {
+            return false;
+        }
+
+        $this->cache->store($cacheStore)->get('__g7_readiness_probe__');
 
         return true;
     }
