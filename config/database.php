@@ -2,6 +2,10 @@
 
 use Illuminate\Support\Str;
 
+$databaseConnectTimeoutSeconds = max(1, (int) env('DB_CONNECT_TIMEOUT_SECONDS', 1));
+$redisConnectTimeoutSeconds = max(0.1, (float) env('REDIS_CONNECT_TIMEOUT_SECONDS', 1.0));
+$redisReadTimeoutSeconds = max(0.1, (float) env('REDIS_READ_TIMEOUT_SECONDS', 1.0));
+
 return [
 
     /*
@@ -79,6 +83,7 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::ATTR_TIMEOUT => $databaseConnectTimeoutSeconds,
                 (PHP_VERSION_ID >= 80500 && class_exists('Pdo\\Mysql', false))
                     ? \Pdo\Mysql::ATTR_SSL_CA
                     : PDO::MYSQL_ATTR_SSL_CA
@@ -102,6 +107,7 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::ATTR_TIMEOUT => $databaseConnectTimeoutSeconds,
                 (PHP_VERSION_ID >= 80500 && class_exists('Pdo\\Mysql', false))
                     ? \Pdo\Mysql::ATTR_SSL_CA
                     : PDO::MYSQL_ATTR_SSL_CA
@@ -146,9 +152,9 @@ return [
     | Migration Repository Table
     |--------------------------------------------------------------------------
     |
-    | This table keeps track of all the migrations that have already run for
-    | your application. Using this information, we can determine which of
-    | the migrations on disk haven't actually been run on the database.
+    | This table keeps track of all of the migrations that have already run for
+    | your application. Using this information, we can determine which of them
+    | have not actually run.
     |
     */
 
@@ -185,6 +191,8 @@ return [
             'password' => env('REDIS_PASSWORD'),
             'port' => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_DB', '0'),
+            'timeout' => $redisConnectTimeoutSeconds,
+            'read_timeout' => $redisReadTimeoutSeconds,
             'max_retries' => env('REDIS_MAX_RETRIES', 3),
             'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
             'backoff_base' => env('REDIS_BACKOFF_BASE', 100),
@@ -198,6 +206,8 @@ return [
             'password' => env('REDIS_PASSWORD'),
             'port' => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_CACHE_DB', '1'),
+            'timeout' => $redisConnectTimeoutSeconds,
+            'read_timeout' => $redisReadTimeoutSeconds,
             'max_retries' => env('REDIS_MAX_RETRIES', 3),
             'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
             'backoff_base' => env('REDIS_BACKOFF_BASE', 100),
