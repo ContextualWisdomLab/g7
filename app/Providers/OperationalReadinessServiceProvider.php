@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Http\Controllers\SystemReadinessController;
+use App\Http\Middleware\ReadinessFailureBoundary;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -24,7 +25,10 @@ final class OperationalReadinessServiceProvider extends ServiceProvider
             static fn (Request $request): Limit => Limit::perMinute(120)->by($request->ip()),
         );
 
-        Route::middleware('throttle:readiness')
+        Route::middleware([
+            ReadinessFailureBoundary::class,
+            'throttle:readiness',
+        ])
             ->get('/ready', SystemReadinessController::class)
             ->name('system.readiness');
     }
