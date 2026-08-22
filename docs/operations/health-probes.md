@@ -16,7 +16,7 @@ Laravel의 `/up`은 애플리케이션이 예외 없이 부팅되면 성공하�
 ```http
 HTTP/1.1 200 OK
 Content-Type: application/json
-Cache-Control: no-store, max-age=0
+Cache-Control: max-age=0, no-store, private
 Pragma: no-cache
 X-Content-Type-Options: nosniff
 
@@ -28,7 +28,7 @@ X-Content-Type-Options: nosniff
 ```http
 HTTP/1.1 503 Service Unavailable
 Content-Type: application/json
-Cache-Control: no-store, max-age=0
+Cache-Control: max-age=0, no-store, private
 Pragma: no-cache
 X-Content-Type-Options: nosniff
 
@@ -104,6 +104,7 @@ readinessProbe:
 - 신규 연결을 보낼 수 있는지 판단하는 로드 밸런서는 `/ready`를 사용합니다.
 - 성공 여부는 응답 본문 문자열이 아니라 HTTP 상태 코드로 판단합니다.
 - 요청 제한 시간은 짧게 유지하되 실제 운영 네트워크 지연보다 낮게 설정하지 마십시오.
+- `/ready`는 클라이언트 IP당 분당 120회로 제한됩니다. `429 Too Many Requests`가 보이면 프로브 주기나 중복 모니터 구성을 줄인 뒤 다시 확인하십시오.
 - `/ready` 응답을 CDN, 프록시 또는 브라우저 캐시에 저장하지 마십시오. 응답 헤더가 이를 금지하지만 중간 장비 설정도 함께 확인하십시오.
 
 ## 장애 대응 순서
@@ -121,7 +122,7 @@ readinessProbe:
 
 ## 보안 경계
 
-이 경로는 오케스트레이터와 로드 밸런서가 애플리케이션 계정 없이 호출할 수 있도록 공개되어 있습니다. 따라서 응답은 한 비트의 트래픽 허용 신호만 제공합니다. 운영자는 상세 진단 값을 `/ready`에 추가하지 말고, 접근 통제된 관측·관리 계층에 추가해야 합니다.
+이 경로는 오케스트레이터와 로드 밸런서가 애플리케이션 계정 없이 호출할 수 있도록 공개되어 있습니다. 따라서 응답은 한 비트의 트래픽 허용 신호만 제공합니다. 공개 프로브의 의존성 접근은 per-IP rate limit으로 제한되며, 운영자는 상세 진단 값을 `/ready`에 추가하지 말고 접근 통제된 관측·관리 계층에 추가해야 합니다.
 
 ## 근거
 
