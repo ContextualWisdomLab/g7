@@ -10,7 +10,7 @@ Kubernetes Authors. (2026, April 17). *Configure liveness, readiness and startup
 
 Laravel. (n.d.). *Deployment: The health route*. Laravel 12.x documentation. Retrieved August 14, 2026, from https://laravel.com/docs/12.x/deployment#the-health-route
 
-Nottingham, M., Fielding, R., & Reschke, J. (2022). *HTTP caching* (RFC 9111). Internet Engineering Task Force. https://doi.org/10.17487/RFC9111
+Fielding, R., Nottingham, M., & Reschke, J. (2022). *HTTP caching* (RFC 9111). Internet Engineering Task Force. https://doi.org/10.17487/RFC9111
 
 ### Decision traceability
 
@@ -19,7 +19,7 @@ Nottingham, M., Fielding, R., & Reschke, J. (2022). *HTTP caching* (RFC 9111). I
 | Separate traffic readiness from restart-oriented liveness | Kubernetes Authors (2026) | `docs/superpowers/specs/2026-08-14-operational-readiness-design.md`; `docs/operations/health-probes.md` |
 | Preserve Laravel `/up` as the application-boot signal | Laravel (n.d.) | `bootstrap/app.php` |
 | Use HTTP 503 when the instance must not receive traffic | Fielding et al. (2022) | `app/Http/Controllers/SystemReadinessController.php` |
-| Prevent readiness responses from being reused by caches | Nottingham et al. (2022) | `app/Http/Controllers/SystemReadinessController.php` |
+| Prevent readiness responses from being reused by caches | Fielding et al. (2022) | `app/Http/Controllers/SystemReadinessController.php` |
 
 ## Secure software development and supply chain
 
