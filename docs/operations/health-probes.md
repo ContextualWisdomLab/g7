@@ -43,13 +43,17 @@ X-Content-Type-Options: nosniff
 
 ```dotenv
 READINESS_CHECKS=database,cache,storage
+READINESS_CACHE_STORE=database
+DB_CONNECT_TIMEOUT_SECONDS=1
+REDIS_CONNECT_TIMEOUT_SECONDS=1
+REDIS_READ_TIMEOUT_SECONDS=1
 ```
 
-- `database`: write 경로와 read 경로에서 각각 side-effect가 없는 `SELECT 1`을 실행합니다. 별도 read replica를 쓰지 않는 환경에서는 두 경로가 같은 서버로 연결될 수 있습니다.
-- `cache`: 기본 캐시 저장소가 읽기 요청에 응답하는지 확인합니다.
+- `database`: write 경로와 read 경로에서 각각 side-effect가 없는 `SELECT 1`을 실행합니다. 별도 read replica를 쓰지 않는 환경에서는 두 경로가 같은 서버로 연결될 수 있습니다. MySQL/MariaDB 연결 시도는 기본 1초에 제한됩니다.
+- `cache`: `READINESS_CACHE_STORE`로 지정한 실제 운영 캐시 저장소가 읽기 요청에 응답하는지 확인합니다. `array`, `null`, 빈/미정의 driver는 실제 의존성 가용성을 증명하지 못하므로 fail-closed 처리합니다. Redis 연결 및 read timeout 기본값은 각각 1초입니다.
 - `storage`: Laravel 런타임 경로가 존재하고 쓰기 가능한지 확인합니다.
 
-알 수 없는 항목, 빈 항목, 빈 목록 또는 잘못된 형식은 모두 `503 not_ready`로 처리됩니다. 필요한 점검을 실수로 비활성화하지 않도록 하는 fail-closed 계약입니다.
+알 수 없는 항목, 빈 항목, 빈 목록 또는 잘못된 형식은 모두 `503 not_ready`로 처리됩니다. 필요한 점검을 실수로 비활성화하지 않도록 하는 fail-closed 계약입니다. `READINESS_CACHE_STORE`를 변경할 때에는 해당 store가 `config/cache.php`에 존재하고 실제 요청 경로에서 사용하는 운영 의존성을 대표하는지 확인하십시오.
 
 비표준 배포에서만 런타임 경로를 바꾸십시오.
 
@@ -96,7 +100,7 @@ readinessProbe:
   failureThreshold: 2
 ```
 
-배포 환경의 최악 부팅 시간을 먼저 측정한 뒤 `startupProbe.failureThreshold × periodSeconds`를 조정하십시오. Readiness 실패는 인스턴스를 Service 대상에서 제외하지만 컨테이너를 재시작하지 않습니다. Liveness 실패는 재시작으로 이어지므로 데이터베이스나 캐시처럼 외부 의존성의 일시 장애를 `/up` 실패로 변환하지 마십시오.
+배포 환경의 최악 부팅 시간을 먼저 측정한 뒤 `startupProbe.failureThreshold × periodSeconds`를 조정하십시오. Readiness 실패는 인스턴스를 Service 대상에서 제외하지만 컨테이너를 재시작하지 않습니다. Liveness 실패는 재시작으로 이어지므로 데이터베이스나 캐시처럼 외부 의존성의 일시 장애를 `/up` 실패로 변환하지 마십시오. 의존성 연결 timeout을 `readinessProbe.timeoutSeconds`보다 짧게 유지하여 애플리케이션 워커가 오케스트레이터의 전체 probe budget을 독점하지 않게 하십시오.
 
 ## 로드 밸런서와 외부 모니터
 
@@ -114,7 +118,7 @@ readinessProbe:
 1. 인스턴스가 트래픽 대상에서 빠졌는지 확인합니다.
 2. 최근 구성 변경과 비밀정보 회전을 확인합니다.
 3. write DB와 read DB의 연결, 계정 권한, 연결 한도, replica 상태와 지연을 각각 확인합니다.
-4. 캐시 저장소 연결과 장애 조치 상태를 확인합니다.
+4. `READINESS_CACHE_STORE`가 실제 운영 store를 가리키는지 확인하고 캐시 연결 및 장애 조치 상태를 점검합니다.
 5. `storage/framework`의 소유자, 그룹, 디스크 여유 공간과 쓰기 권한을 확인합니다.
 6. 문제를 해결한 뒤 `/ready`가 연속으로 성공하는지 확인하고 트래픽을 복구합니다.
 
@@ -122,7 +126,7 @@ readinessProbe:
 
 ## 보안 경계
 
-이 경로는 오케스트레이터와 로드 밸런서가 애플리케이션 계정 없이 호출할 수 있도록 공개되어 있습니다. 따라서 응답은 한 비트의 트래픽 허용 신호만 제공합니다. 공개 프로브의 의존성 접근은 per-IP rate limit으로 제한되며, 운영자는 상세 진단 값을 `/ready`에 추가하지 말고 접근 통제된 관측·관리 계층에 추가해야 합니다.
+이 경로는 오케스트레이터와 로드 밸런서가 애플리케이션 계정 없이 호출할 수 있도록 공개되어 있습니다. 따라서 응답은 한 비트의 트래픽 허용 신호만 제공합니다. 공개 프로브의 의존성 접근은 per-IP rate limit과 bounded connection timeout으로 제한되며, 운영자는 상세 진단 값을 `/ready`에 추가하지 말고 접근 통제된 관측·관리 계층에 추가해야 합니다.
 
 ## 근거
 
