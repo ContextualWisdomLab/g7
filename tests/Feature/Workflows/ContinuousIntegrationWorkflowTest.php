@@ -42,6 +42,18 @@ class ContinuousIntegrationWorkflowTest extends TestCase
     }
 
     /**
+     * Pull-request jobs must inspect the submitted commit, never GitHub's synthetic merge ref.
+     */
+    public function test_pull_request_jobs_checkout_the_exact_head_sha(): void
+    {
+        self::assertSame(
+            2,
+            substr_count($this->workflow, 'ref: ${{ github.event.pull_request.head.sha }}'),
+            'Both CI jobs must explicitly checkout the pull-request head SHA.',
+        );
+    }
+
+    /**
      * CI must remain read-only and must not use privileged agent credentials.
      */
     public function test_workflow_uses_least_privilege_and_contains_no_copilot_token(): void
@@ -53,6 +65,17 @@ class ContinuousIntegrationWorkflowTest extends TestCase
         );
         self::assertStringNotContainsString('pull_request_target:', $this->workflow);
         self::assertStringNotContainsString('COPILOT_GITHUB_TOKEN', $this->workflow);
+    }
+
+    /**
+     * Temporary branch-writing repair workflows must not survive in a reviewable head.
+     */
+    public function test_temporary_branch_writing_repair_workflow_is_absent(): void
+    {
+        self::assertFileDoesNotExist(
+            dirname(__DIR__, 3).'/.github/workflows/pr1-repair.yml',
+            'A reviewable head must not retain a workflow with branch-write authority.',
+        );
     }
 
     /**
