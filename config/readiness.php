@@ -7,5 +7,6 @@ $checks = array_map(
 
 return [
     'checks' => $checks,
+    'cache_store' => env('READINESS_CACHE_STORE') ?: env('CACHE_STORE', 'database'),
     'storage_path' => env('READINESS_STORAGE_PATH', storage_path('framework')),
 ];
