@@ -55,6 +55,23 @@ class SystemReadinessControllerTest extends TestCase
     }
 
     /**
+     * Public probes must be bounded so an external caller cannot amplify
+     * database, cache, and filesystem dependency traffic without limit.
+     */
+    public function test_readiness_endpoint_rate_limits_probe_amplification(): void
+    {
+        $service = Mockery::mock(SystemReadinessService::class);
+        $service->shouldReceive('isReady')->times(120)->andReturnTrue();
+        $this->app->instance(SystemReadinessService::class, $service);
+
+        for ($request = 1; $request <= 120; $request++) {
+            $this->getJson('/ready')->assertOk();
+        }
+
+        $this->getJson('/ready')->assertStatus(429);
+    }
+
+    /**
      * Assert the response cannot be reused by an intermediary or browser cache.
      */
     private function assertNoStoreCacheControl(?string $cacheControl): void
