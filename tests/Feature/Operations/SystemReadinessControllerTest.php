@@ -3,6 +3,7 @@
 namespace Tests\Feature\Operations;
 
 use App\Services\SystemReadinessService;
+use Illuminate\Cache\RateLimiter;
 use Mockery;
 use Tests\TestCase;
 
@@ -69,6 +70,30 @@ class SystemReadinessControllerTest extends TestCase
         }
 
         $this->getJson('/ready')->assertStatus(429);
+    }
+
+    /**
+     * Limiter-backend failures must not turn the health endpoint into a 500
+     * response or disclose middleware/cache exception details.
+     */
+    public function test_rate_limiter_backend_failure_returns_minimal_not_ready_response(): void
+    {
+        $rateLimiter = Mockery::mock(RateLimiter::class);
+        $rateLimiter->shouldReceive('tooManyAttempts')
+            ->andThrow(new \RuntimeException('secret limiter backend'));
+        $this->app->instance(RateLimiter::class, $rateLimiter);
+
+        $service = Mockery::mock(SystemReadinessService::class);
+        $service->shouldNotReceive('isReady');
+        $this->app->instance(SystemReadinessService::class, $service);
+
+        $response = $this->getJson('/ready');
+
+        $response->assertStatus(503)
+            ->assertExactJson(['status' => 'not_ready'])
+            ->assertHeader('Pragma', 'no-cache')
+            ->assertHeader('X-Content-Type-Options', 'nosniff');
+        $this->assertNoStoreCacheControl($response->headers->get('Cache-Control'));
     }
 
     /**
