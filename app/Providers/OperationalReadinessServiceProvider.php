@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use App\Http\Controllers\SystemReadinessController;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -12,11 +15,17 @@ use Illuminate\Support\ServiceProvider;
 final class OperationalReadinessServiceProvider extends ServiceProvider
 {
     /**
-     * Register the traffic-readiness route.
+     * Register the traffic-readiness route with a bounded public probe rate.
      */
     public function boot(): void
     {
-        Route::get('/ready', SystemReadinessController::class)
+        RateLimiter::for(
+            'readiness',
+            static fn (Request $request): Limit => Limit::perMinute(120)->by($request->ip()),
+        );
+
+        Route::middleware('throttle:readiness')
+            ->get('/ready', SystemReadinessController::class)
             ->name('system.readiness');
     }
 }
