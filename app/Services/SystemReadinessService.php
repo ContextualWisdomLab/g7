@@ -20,10 +20,7 @@ class SystemReadinessService
     /** @var list<string> */
     private const SUPPORTED_CHECKS = ['database', 'cache', 'storage'];
 
-    /**
-     * MySQL terminates this read-only probe after one second if execution stalls.
-     */
-    private const DATABASE_PROBE = 'SELECT /*+ MAX_EXECUTION_TIME(1000) */ 1 AS readiness_value';
+    private const DATABASE_PROBE = 'SELECT 1 AS readiness_value';
 
     /**
      * Create the readiness evaluator.
@@ -92,10 +89,28 @@ class SystemReadinessService
     private function checkDatabase(): bool
     {
         $connection = $this->database->connection();
-        $connection->selectOne(self::DATABASE_PROBE, [], false);
-        $connection->selectOne(self::DATABASE_PROBE, [], true);
+        $probe = $this->databaseProbe();
+        $connection->selectOne($probe, [], false);
+        $connection->selectOne($probe, [], true);
 
         return true;
+    }
+
+    /**
+     * Build the MySQL readiness probe with an optional server-side SELECT budget.
+     */
+    private function databaseProbe(): string
+    {
+        $timeoutMilliseconds = (int) $this->config->get('readiness.database_query_timeout_ms', 0);
+
+        if ($timeoutMilliseconds <= 0) {
+            return self::DATABASE_PROBE;
+        }
+
+        return sprintf(
+            'SELECT /*+ MAX_EXECUTION_TIME(%d) */ 1 AS readiness_value',
+            $timeoutMilliseconds,
+        );
     }
 
     /**
