@@ -12,6 +12,8 @@ Laravel. (n.d.). *Deployment: The health route*. Laravel 12.x documentation. Ret
 
 Fielding, R., Nottingham, M., & Reschke, J. (2022). *HTTP caching* (RFC 9111). Internet Engineering Task Force. https://doi.org/10.17487/RFC9111
 
+Oracle. (2026). *MySQL 8.4 reference manual: Server system variables*. Retrieved August 25, 2026, from https://dev.mysql.com/doc/refman/8.4/en/server-system-variables.html#sysvar_max_execution_time
+
 ### Decision traceability
 
 | Decision | Supporting source | Repository evidence |
@@ -20,6 +22,7 @@ Fielding, R., Nottingham, M., & Reschke, J. (2022). *HTTP caching* (RFC 9111). I
 | Preserve Laravel `/up` as the application-boot signal | Laravel (n.d.) | `bootstrap/app.php` |
 | Use HTTP 503 when the instance must not receive traffic | Fielding et al. (2022) | `app/Http/Controllers/SystemReadinessController.php` |
 | Prevent readiness responses from being reused by caches | Fielding et al. (2022) | `app/Http/Controllers/SystemReadinessController.php` |
+| Bound each MySQL readiness `SELECT` with a server-enforced execution budget | Oracle (2026) | `app/Services/SystemReadinessService.php`; `config/readiness.php`; `tests/Unit/Services/SystemReadinessQueryTimeoutTest.php` |
 
 ## Secure software development and supply chain
 
