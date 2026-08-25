@@ -4,6 +4,7 @@
 
 - 운영자는 프로세스 생존 확인에는 `/up`, 실제 트래픽 투입 판단에는 `/ready`를 사용하십시오. `/ready`는 데이터베이스·캐시·Laravel 런타임 쓰기 경로가 모두 준비됐을 때만 성공하며, 실패하면 인스턴스를 트래픽 대상에서 제외하되 재시작하지 않습니다.
 - 배포 전에 `READINESS_CHECKS`와 필요 시 `READINESS_STORAGE_PATH`를 확인하고, 로드 밸런서 또는 Kubernetes readiness probe가 HTTP 상태 코드로 `/ready`를 판정하도록 설정하십시오.
+- MySQL readiness의 write/read `SELECT`는 각각 1초의 서버 측 `MAX_EXECUTION_TIME` 예산을 사용하므로 연결 이후 쿼리 실행이 멈추더라도 probe worker를 무기한 점유하지 않습니다.
 - 기여자는 새 PR에서 PHP 8.2·8.5와 Node.js 22·24 exact-head CI가 모두 완료됐는지 확인하십시오. 잠긴 의존성 설치, 보안 감사, PHP 포맷, MySQL 마이그레이션, 100% PHP coverage gate, 전체 Vitest와 production build가 검증됩니다.
 
 ## Security
