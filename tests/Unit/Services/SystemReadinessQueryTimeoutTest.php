@@ -47,6 +47,7 @@ class SystemReadinessQueryTimeoutTest extends TestCase
         $config = new ConfigRepository([
             'readiness' => [
                 'checks' => ['database'],
+                'database_query_timeout_ms' => 1000,
             ],
         ]);
 
