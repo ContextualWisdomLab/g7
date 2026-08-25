@@ -49,7 +49,7 @@ REDIS_CONNECT_TIMEOUT_SECONDS=1
 REDIS_READ_TIMEOUT_SECONDS=1
 ```
 
-- `database`: write 경로와 read 경로에서 각각 side-effect가 없는 `SELECT 1`을 실행합니다. 별도 read replica를 쓰지 않는 환경에서는 두 경로가 같은 서버로 연결될 수 있습니다. MySQL/MariaDB 연결 시도는 기본 1초에 제한됩니다.
+- `database`: write 경로와 read 경로에서 각각 side-effect가 없는 `SELECT 1`을 실행합니다. 별도 read replica를 쓰지 않는 환경에서는 두 경로가 같은 서버로 연결될 수 있습니다. MySQL 연결 시도는 기본 1초에 제한되고, readiness `SELECT` 자체도 MySQL `MAX_EXECUTION_TIME(1000)` optimizer hint로 1초 실행 예산을 갖습니다. 따라서 연결은 끝났지만 쿼리 처리가 멈춘 경우에도 probe가 무기한 워커를 점유하지 않습니다.
 - `cache`: `READINESS_CACHE_STORE`로 지정한 실제 운영 캐시 저장소가 읽기 요청에 응답하는지 확인합니다. `array`, `null`, 빈/미정의 driver는 실제 의존성 가용성을 증명하지 못하므로 fail-closed 처리합니다. Redis 연결 및 read timeout 기본값은 각각 1초입니다.
 - `storage`: Laravel 런타임 경로가 존재하고 쓰기 가능한지 확인합니다.
 
@@ -100,7 +100,7 @@ readinessProbe:
   failureThreshold: 2
 ```
 
-배포 환경의 최악 부팅 시간을 먼저 측정한 뒤 `startupProbe.failureThreshold × periodSeconds`를 조정하십시오. Readiness 실패는 인스턴스를 Service 대상에서 제외하지만 컨테이너를 재시작하지 않습니다. Liveness 실패는 재시작으로 이어지므로 데이터베이스나 캐시처럼 외부 의존성의 일시 장애를 `/up` 실패로 변환하지 마십시오. 의존성 연결 timeout을 `readinessProbe.timeoutSeconds`보다 짧게 유지하여 애플리케이션 워커가 오케스트레이터의 전체 probe budget을 독점하지 않게 하십시오.
+배포 환경의 최악 부팅 시간을 먼저 측정한 뒤 `startupProbe.failureThreshold × periodSeconds`를 조정하십시오. Readiness 실패는 인스턴스를 Service 대상에서 제외하지만 컨테이너를 재시작하지 않습니다. Liveness 실패는 재시작으로 이어지므로 데이터베이스나 캐시처럼 외부 의존성의 일시 장애를 `/up` 실패로 변환하지 마십시오. 의존성의 연결·읽기·쿼리 실행 예산을 `readinessProbe.timeoutSeconds`보다 짧게 유지하여 애플리케이션 워커가 오케스트레이터의 전체 probe budget을 독점하지 않게 하십시오.
 
 ## 로드 밸런서와 외부 모니터
 
@@ -126,7 +126,7 @@ readinessProbe:
 
 ## 보안 경계
 
-이 경로는 오케스트레이터와 로드 밸런서가 애플리케이션 계정 없이 호출할 수 있도록 공개되어 있습니다. 따라서 응답은 한 비트의 트래픽 허용 신호만 제공합니다. 공개 프로브의 의존성 접근은 per-IP rate limit과 bounded connection timeout으로 제한되며, 운영자는 상세 진단 값을 `/ready`에 추가하지 말고 접근 통제된 관측·관리 계층에 추가해야 합니다.
+이 경로는 오케스트레이터와 로드 밸런서가 애플리케이션 계정 없이 호출할 수 있도록 공개되어 있습니다. 따라서 응답은 한 비트의 트래픽 허용 신호만 제공합니다. 공개 프로브의 의존성 접근은 per-IP rate limit과 bounded connection/read/query-execution timeout으로 제한되며, 운영자는 상세 진단 값을 `/ready`에 추가하지 말고 접근 통제된 관측·관리 계층에 추가해야 합니다.
 
 ## 근거
 
