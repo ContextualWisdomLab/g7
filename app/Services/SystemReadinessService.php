@@ -21,6 +21,11 @@ class SystemReadinessService
     private const SUPPORTED_CHECKS = ['database', 'cache', 'storage'];
 
     /**
+     * MySQL terminates this read-only probe after one second if execution stalls.
+     */
+    private const DATABASE_PROBE = 'SELECT /*+ MAX_EXECUTION_TIME(1000) */ 1 AS readiness_value';
+
+    /**
      * Create the readiness evaluator.
      */
     public function __construct(
@@ -82,13 +87,13 @@ class SystemReadinessService
     }
 
     /**
-     * Verify that both write and read database paths can execute a query.
+     * Verify that both write and read database paths can execute a bounded query.
      */
     private function checkDatabase(): bool
     {
         $connection = $this->database->connection();
-        $connection->selectOne('SELECT 1 AS readiness_value', [], false);
-        $connection->selectOne('SELECT 1 AS readiness_value', [], true);
+        $connection->selectOne(self::DATABASE_PROBE, [], false);
+        $connection->selectOne(self::DATABASE_PROBE, [], true);
 
         return true;
     }
