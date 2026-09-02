@@ -16,7 +16,7 @@
 - **인증·권한·운영 기반** — Sanctum 기반 인증, 역할/권한/스코프, 캐시·알림·검색·SEO 등 공통 서비스가 현재 코드와 문서에 존재합니다.
 - **커머스 확장** — 쇼핑·결제 등은 코어와 확장 계약의 조합으로 다뤄지며, 외부 결제/본인인증 사업자의 권위나 약관을 이 저장소가 대체하지 않습니다.
 
-상세 기능 목록과 upstream 설명은 [보존된 장문 제품 reference](docs/upstream-readme-reference.md)에서 확인할 수 있습니다. Root README는 fork 사용자와 통합자가 먼저 알아야 할 경계와 실행 경로만 유지합니다.
+상세 기능 목록과 upstream 설명은 [보존된 장문 제품 reference](UPSTREAM_README_REFERENCE.md)에서 확인할 수 있습니다. Root README는 fork 사용자와 통합자가 먼저 알아야 할 경계와 실행 경로만 유지합니다.
 
 ## 빠른 시작
 
@@ -78,7 +78,7 @@ Fork source에 기능 코드가 존재한다는 사실만으로 production deplo
 - [`INSTALL.md`](INSTALL.md) — 설치 요구사항과 환경별 설치 절차
 - [`CHANGELOG.md`](CHANGELOG.md) — 이 source tree에 기록된 변경 이력
 - [`docs/requirements.md`](docs/requirements.md) — 상세 환경 요구사항
-- [`docs/upstream-readme-reference.md`](docs/upstream-readme-reference.md) — 이전 장문 README의 기능·아키텍처·비즈니스 설명 보존본
+- [`UPSTREAM_README_REFERENCE.md`](UPSTREAM_README_REFERENCE.md) — 이전 장문 README의 기능·아키텍처·비즈니스 설명 보존본
 - [`AGENTS.md`](AGENTS.md) — 유지보수/자동화 지침; 일반 사용자용 제품 문서가 아님
 
 ## 기여 및 유지보수
