@@ -2,11 +2,16 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ContextualWisdomLab/g7)
 
-그누보드7은 Laravel 12와 React를 기반으로 모듈·플러그인·템플릿·언어팩·JSON 레이아웃을 조합하는 CMS·커머스 플랫폼입니다. 이 저장소는 [`gnuboard/g7`](https://github.com/gnuboard/g7)의 **ContextualWisdomLab fork**이며, 원본 제품·저작권·공식 배포 이력의 권위는 upstream에 있습니다. 이 fork의 기능·검증·릴리스 상태는 이 저장소의 exact revision을 기준으로 별도로 확인해야 합니다.
+그누보드7은 Laravel 12와 React를 기반으로 모듈·플러그인·템플릿·언어팩·JSON 레이아웃을 조합하는 CMS·커머스 플랫폼입니다. 이 저장소는 [`gnuboard/g7`](https://github.com/gnuboard/g7)의 **ContextualWisdomLab fork**이며, 원본 제품·저작권·공식 배포 이력의 권위는 upstream에 있습니다. Fork-specific 기능·검증·릴리스 상태는 사용하려는 commit과 이 저장소의 현재 CI/review evidence를 기준으로 별도로 확인해야 합니다.
 
 ## 시작하기
 
-설치와 로컬 평가의 첫 진입점은 [repository README](https://github.com/ContextualWisdomLab/g7#readme)와 [설치 가이드](https://github.com/ContextualWisdomLab/g7/blob/main/INSTALL.md)입니다. 현재 소스는 PHP 8.2+, Laravel 12, React/Vite와 MySQL 또는 MariaDB 기반 런타임을 전제로 하며, 배포하려는 exact revision의 manifest와 설치 문서를 함께 확인하세요.
+아래 repository 링크는 **보호된 기본 branch에 통합된 현재 공개 문서**를 따라갑니다. 아직 병합되지 않은 PR이나 과거 commit을 검토할 때는 해당 GitHub revision의 파일을 직접 열어 설치 지침과 manifest가 같은 revision인지 확인하세요.
+
+- [Repository README](https://github.com/ContextualWisdomLab/g7#readme)
+- [설치 가이드](https://github.com/ContextualWisdomLab/g7/blob/main/INSTALL.md)
+
+현재 소스는 PHP 8.2+, Laravel 12, React/Vite와 MySQL 또는 MariaDB 기반 런타임을 전제로 합니다. 프론트엔드 빌드·테스트에는 Vite 7의 현재 지원 범위인 **Node.js 20.19+ 또는 22.12+**가 필요합니다.
 
 깨끗한 source checkout의 기본 흐름은 다음과 같습니다.
 
@@ -35,7 +40,7 @@ php artisan serve
 
 ## 검증과 릴리스 상태
 
-검토 중인 exact revision에서 먼저 의존성을 설치한 뒤 저장소가 제공하는 테스트와 빌드 진입점을 실행하세요.
+검토 중인 revision에서 먼저 의존성을 설치한 뒤 저장소가 제공하는 테스트와 빌드 진입점을 실행하세요.
 
 ```bash
 composer test
@@ -47,10 +52,10 @@ npm run build
 
 ## 문서
 
-- [README](https://github.com/ContextualWisdomLab/g7#readme) — 제품 개요, fork 경계, 빠른 시작, release truth
-- [설치 가이드](https://github.com/ContextualWisdomLab/g7/blob/main/INSTALL.md) — 환경 요구사항과 설치 절차
-- [변경 이력](https://github.com/ContextualWisdomLab/g7/blob/main/CHANGELOG.md) — source-tree 변경 기록
-- [보존된 upstream README reference](https://github.com/ContextualWisdomLab/g7/blob/main/UPSTREAM_README_REFERENCE.md) — 장문 기능·아키텍처·운영 reference
+- [README](https://github.com/ContextualWisdomLab/g7#readme) — 보호된 기본 branch의 제품 개요, fork 경계, 빠른 시작, release truth
+- [설치 가이드](https://github.com/ContextualWisdomLab/g7/blob/main/INSTALL.md) — 보호된 기본 branch의 환경 요구사항과 설치 절차
+- [변경 이력](https://github.com/ContextualWisdomLab/g7/blob/main/CHANGELOG.md) — 보호된 기본 branch의 source-tree 변경 기록
+- [역사적 upstream README 원문 보존본](https://github.com/ContextualWisdomLab/g7/blob/main/UPSTREAM_README_REFERENCE.md) — 이전 upstream-oriented README의 byte-for-byte snapshot; 내부 `version-7.0.5`·`Stable` 표시는 현재 fork 상태가 아님
 - [라이선스](https://github.com/ContextualWisdomLab/g7/blob/main/LICENSE) — upstream MIT grant와 SIRSOFT 저작권 고지
 - [Ask DeepWiki](https://deepwiki.com/ContextualWisdomLab/g7) — 저장소 탐색과 질의
 
