@@ -381,7 +381,7 @@ cp .env.example .env
 | 모듈 | 설명 |
 |------|------|
 | **sirsoft-board** | 게시판 — 다중 게시판, 댓글, 파일 첨부 |
-| **sirsoft-ecommerce** | 쇼핑몰 — 상품, 주문, 결제, 배송 관리 |
+| **sirsoft-ecommerce** | 쇼핑몰 — 상품, 주문, 결제, 배송, 쿠폰, 상품 문의 |
 | **sirsoft-page** | 페이지 — 정적 콘텐츠 관리 |
 
 ### 플러그인
