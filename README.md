@@ -14,6 +14,7 @@
   <a href="#"><img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black" alt="React"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License"></a>
   <a href="#"><img src="https://img.shields.io/badge/status-Stable-brightgreen" alt="Status"></a>
+  <a href="https://deepwiki.com/ContextualWisdomLab/g7"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 </p>
 
 <p align="center">
@@ -380,7 +381,7 @@ cp .env.example .env
 | 모듈 | 설명 |
 |------|------|
 | **sirsoft-board** | 게시판 — 다중 게시판, 댓글, 파일 첨부 |
-| **sirsoft-ecommerce** | 쇼핑몰 — 상품, 주문, 결제, 배송, 쿠폰, 상품 문의 |
+| **sirsoft-ecommerce** | 쇼핑몰 — 상품, 주문, 결제, 배송 관리 |
 | **sirsoft-page** | 페이지 — 정적 콘텐츠 관리 |
 
 ### 플러그인
