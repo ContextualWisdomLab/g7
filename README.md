@@ -18,11 +18,11 @@
 - **인증·권한·운영 기반** — Sanctum 기반 인증, 역할/권한/스코프, 캐시·알림·검색·SEO 등 공통 서비스가 현재 코드와 문서에 존재합니다.
 - **커머스 확장** — 쇼핑·결제 등은 코어와 확장 계약의 조합으로 다뤄지며, 외부 결제/본인인증 사업자의 권위나 약관을 이 저장소가 대체하지 않습니다.
 
-상세 기능 목록과 upstream 설명은 [보존된 장문 제품 reference](UPSTREAM_README_REFERENCE.md)에서 확인할 수 있습니다. Root README는 fork 사용자와 통합자가 먼저 알아야 할 경계와 실행 경로만 유지합니다.
+상세 기능 목록과 upstream 설명은 [역사적 upstream README 원문 보존본](UPSTREAM_README_REFERENCE.md)에서 확인할 수 있습니다. 이 보존본의 버전·상태 배지는 fork의 현재 release/status 증거가 아닙니다. Root README는 fork 사용자와 통합자가 먼저 알아야 할 경계와 실행 경로만 유지합니다.
 
 ## 빠른 시작
 
-현재 설치 문서는 PHP 8.2+, MySQL 8.0+ 또는 MariaDB 10.3+, Composer 2.x를 기본 요구사항으로 설명합니다. Redis 6.0+는 프로덕션 권장 선택 사항입니다. 정확한 환경·웹서버·공유호스팅 절차는 [`INSTALL.md`](INSTALL.md)를 먼저 확인하세요.
+현재 설치 문서는 PHP 8.2+, MySQL 8.0+ 또는 MariaDB 10.3+, Composer 2.x를 기본 요구사항으로 설명합니다. 프론트엔드 빌드와 테스트에는 현재 Vite 7 계열이 요구하는 **Node.js 20.19+ 또는 22.12+**가 필요합니다. Redis 6.0+는 프로덕션 권장 선택 사항입니다. 정확한 환경·웹서버·공유호스팅 절차는 [`INSTALL.md`](INSTALL.md)를 먼저 확인하세요.
 
 이 fork의 소스를 로컬에서 확인하려면:
 
@@ -41,7 +41,7 @@ php artisan serve
 http://localhost:8000/install
 ```
 
-`package-lock.json`이 현재 프론트엔드 의존성을 고정하므로 깨끗한 checkout에서는 `npm ci`를 먼저 실행합니다. 그 뒤 `package.json`의 Vite/Vitest/Playwright 스크립트를 사용할 수 있습니다. PHP 테스트는 Composer가 제공하는 현재 repository contract를 따릅니다.
+`package-lock.json`이 현재 프론트엔드 의존성을 고정하므로 깨끗한 checkout에서는 호환되는 Node.js 버전으로 `npm ci`를 먼저 실행합니다. 그 뒤 `package.json`의 Vite/Vitest/Playwright 스크립트를 사용할 수 있습니다. PHP 테스트는 Composer가 제공하는 현재 repository contract를 따릅니다.
 
 ```bash
 composer test
@@ -58,7 +58,7 @@ npm run build
 | 영역 | 현재 소스 경계 |
 | --- | --- |
 | Backend | PHP `^8.2`, Laravel `^12.0` |
-| Frontend | React `^19.2.0`, Vite, Tailwind CSS 4 |
+| Frontend | React `^19.2.0`, Vite 7, Tailwind CSS 4; Node.js 20.19+ 또는 22.12+ |
 | Authentication | Laravel Sanctum |
 | Realtime | Laravel Reverb / Echo 계열 |
 | Search | Laravel Scout |
@@ -81,7 +81,7 @@ Fork source에 기능 코드가 존재한다는 사실만으로 production deplo
 - [`INSTALL.md`](INSTALL.md) — 설치 요구사항과 환경별 설치 절차
 - [`CHANGELOG.md`](CHANGELOG.md) — 이 source tree에 기록된 변경 이력
 - [`docs/requirements.md`](docs/requirements.md) — 상세 환경 요구사항
-- [`UPSTREAM_README_REFERENCE.md`](UPSTREAM_README_REFERENCE.md) — 이전 장문 README의 기능·아키텍처·비즈니스 설명 보존본
+- [`UPSTREAM_README_REFERENCE.md`](UPSTREAM_README_REFERENCE.md) — **역사적 upstream README 원문 보존본**; 당시 기능·아키텍처·비즈니스 설명이며 현재 fork release truth가 아님
 - [`AGENTS.md`](AGENTS.md) — 유지보수/자동화 지침; 일반 사용자용 제품 문서가 아님
 
 ## 기여 및 유지보수
