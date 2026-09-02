@@ -1,5 +1,7 @@
 # 그누보드7 · Gnuboard7
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ContextualWisdomLab/g7)
+
 **Laravel 12 + React 기반의 확장형 CMS·커머스 플랫폼.**
 
 이 저장소는 [`gnuboard/g7`](https://github.com/gnuboard/g7)의 **ContextualWisdomLab fork**입니다. 그누보드7의 제품·저작권·공식 배포 권위는 upstream에 있으며, 이 fork의 변경과 검증 상태는 이 저장소의 branch/PR 이력으로 별도로 판단해야 합니다.
