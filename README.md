@@ -30,6 +30,7 @@
 git clone https://github.com/ContextualWisdomLab/g7.git
 cd g7
 composer install
+npm ci
 cp .env.example .env
 php artisan serve
 ```
@@ -40,7 +41,7 @@ php artisan serve
 http://localhost:8000/install
 ```
 
-프론트엔드 개발과 테스트에는 `package.json`의 Vite/Vitest/Playwright 스크립트를 사용합니다. PHP 테스트는 Composer가 제공하는 현재 repository contract를 따릅니다.
+`package-lock.json`이 현재 프론트엔드 의존성을 고정하므로 깨끗한 checkout에서는 `npm ci`를 먼저 실행합니다. 그 뒤 `package.json`의 Vite/Vitest/Playwright 스크립트를 사용할 수 있습니다. PHP 테스트는 Composer가 제공하는 현재 repository contract를 따릅니다.
 
 ```bash
 composer test
