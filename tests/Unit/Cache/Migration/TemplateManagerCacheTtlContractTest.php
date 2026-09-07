@@ -54,14 +54,10 @@ class TemplateManagerCacheTtlContractTest extends TestCase
     }
 
     /**
-     * Layout warming must expire on the central TTL, not the legacy fallback.
+     * Return the layout cache key created for the installed test template.
      */
-    #[Test]
-    public function template_manager_honors_central_layout_cache_ttl(): void
+    private function warmedLayoutCacheKey(): string
     {
-        Config::set('template.layout.cache_ttl', 3600);
-        Config::set('g7_settings.core.cache.layout_ttl', 1);
-
         $this->templateManager->installTemplate('sirsoft-admin_basic');
         $this->templateManager->activateTemplate('sirsoft-admin_basic');
 
@@ -72,7 +68,36 @@ class TemplateManagerCacheTtlContractTest extends TestCase
         $this->assertIsString($layoutName);
 
         $cacheVersion = ClearsTemplateCaches::getExtensionCacheVersion();
-        $cacheKey = "layout.sirsoft-admin_basic.{$layoutName}.v{$cacheVersion}";
+
+        return "layout.sirsoft-admin_basic.{$layoutName}.v{$cacheVersion}";
+    }
+
+    /**
+     * A longer central TTL must override a shorter legacy fallback.
+     */
+    #[Test]
+    public function template_manager_keeps_layout_for_longer_central_ttl(): void
+    {
+        Config::set('template.layout.cache_ttl', 1);
+        Config::set('g7_settings.core.cache.layout_ttl', 5);
+
+        $cacheKey = $this->warmedLayoutCacheKey();
+
+        $this->travel(2)->seconds();
+
+        $this->assertNotNull($this->coreCache()->get($cacheKey));
+    }
+
+    /**
+     * Layout warming must expire on the central TTL, not the legacy fallback.
+     */
+    #[Test]
+    public function template_manager_honors_central_layout_cache_ttl(): void
+    {
+        Config::set('template.layout.cache_ttl', 3600);
+        Config::set('g7_settings.core.cache.layout_ttl', 1);
+
+        $cacheKey = $this->warmedLayoutCacheKey();
 
         $this->assertNotNull($this->coreCache()->get($cacheKey));
 
