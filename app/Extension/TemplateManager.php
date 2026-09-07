@@ -1829,7 +1829,10 @@ class TemplateManager implements TemplateManagerInterface
         // 현재 캐시 버전 — 프론트엔드 ?v= 파라미터와 일치하는 키로 워밍해야 서빙 시 히트됨
         $cacheVersion = self::getExtensionCacheVersion();
         $layoutService = app(LayoutService::class);
-        $cacheTtl = (int) g7_core_settings('cache.layout_ttl', config('template.layout.cache_ttl', 3600));
+        $cacheTtl = (int) g7_core_settings(
+            'cache.layout_ttl',
+            config('template.layout.cache_ttl', 3600)
+        );
 
         foreach ($layouts as $layoutName) {
             try {
