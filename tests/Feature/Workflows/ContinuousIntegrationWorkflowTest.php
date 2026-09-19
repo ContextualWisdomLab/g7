@@ -85,10 +85,13 @@ class ContinuousIntegrationWorkflowTest extends TestCase
     {
         self::assertStringContainsString('concurrency:', $this->workflow);
         self::assertStringContainsString(
-            'group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}',
+            'group: ${{ github.workflow }}-${{ github.repository }}-${{ github.event.pull_request.number || github.run_id }}',
             $this->workflow,
         );
-        self::assertStringContainsString('cancel-in-progress: true', $this->workflow);
+        self::assertStringContainsString(
+            "cancel-in-progress: \${{ github.event_name == 'pull_request' }}",
+            $this->workflow,
+        );
     }
 
     /**
