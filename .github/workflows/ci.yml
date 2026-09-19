@@ -1,0 +1,138 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.repository }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  php:
+    name: PHP ${{ matrix.php-version }} / MySQL 8.4.10
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.2', '8.5']
+    services:
+      mysql:
+        image: mysql:8.4.10
+        env:
+          MYSQL_DATABASE: g7_testing
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --host=127.0.0.1 --password=root --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      APP_NAME: GSeven
+      APP_ENV: testing
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      APP_DEBUG: false
+      APP_URL: http://localhost
+      APP_LOCALE: ko
+      APP_FALLBACK_LOCALE: en
+      DB_CONNECTION: mysql
+      DB_WRITE_HOST: 127.0.0.1
+      DB_WRITE_PORT: 3306
+      DB_WRITE_DATABASE: g7_testing
+      DB_WRITE_USERNAME: root
+      DB_WRITE_PASSWORD: root
+      DB_READ_HOST: 127.0.0.1
+      DB_READ_PORT: 3306
+      DB_READ_DATABASE: g7_testing
+      DB_READ_USERNAME: root
+      DB_READ_PASSWORD: root
+      DB_PREFIX: g7_
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      BROADCAST_CONNECTION: log
+      FILESYSTEM_DISK: local
+      INSTALLER_COMPLETED: false
+      TELESCOPE_ENABLED: false
+      XDEBUG_MODE: coverage
+    steps:
+      - name: Check out the exact revision
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Install PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: bcmath, curl, dom, exif, fileinfo, gd, intl, mbstring, pcntl, pdo_mysql, sodium, zip
+          coverage: xdebug
+          tools: composer:v2
+
+      - name: Prepare the test environment
+        run: cp .env.testing.example .env.testing
+
+      - name: Validate Composer metadata
+        run: composer validate --strict --no-check-publish
+
+      - name: Install locked PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Audit locked PHP dependencies
+        run: composer audit --locked --no-interaction
+
+      - name: Verify PHP formatting
+        run: vendor/bin/pint --test
+
+      - name: Build the test database
+        run: php artisan migrate:fresh --env=testing --force
+
+      - name: Run the complete PHP suite with the coverage gate
+        env:
+          INSTALLER_COMPLETED: true
+        run: php artisan test --coverage --min=100
+
+  frontend:
+    name: Node.js ${{ matrix.node-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22, 24]
+    steps:
+      - name: Check out the exact revision
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install locked JavaScript dependencies
+        run: npm ci
+
+      - name: Audit production JavaScript dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Run the complete JavaScript test suite
+        run: npm run test:run
+
+      - name: Build production frontend assets
+        run: npm run build
